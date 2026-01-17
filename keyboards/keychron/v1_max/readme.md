@@ -21,3 +21,12 @@ Flashing example for this keyboard:
 **Reset Key**: Toggle mode switch to "Cable", hold down the *Esc* key or reset button underneath space bar while connecting the USB cable,
 
 See the [build environment setup](https://docs.qmk.fm/#/getting_started_build_tools) and the [make instructions](https://docs.qmk.fm/#/getting_started_make_guide) for more information. Brand new to QMK? Start with our [Complete Newbs Guide](https://docs.qmk.fm/#/newbs).
+
+DHO: Flashing doesn't seem to work from WSL2. You can flash from the QMK Toolbox though:
+- Make sure drivers are install (Tools->Install Drivers...)
+- Build the firmware like described above
+- Copy the output file somewhere to windows
+- In QMK Toolbox, click Open next to the Local File dropdown.
+- Disconnect the keyboard.
+- Switch it to cabled mode, press Esc, and while pressing Esc, connect the USB cable.
+- The Flash button should now activate in QMK. Press it, enjoy.
