@@ -23,6 +23,9 @@ enum layers {
     WIN_BASE,
     WIN_FN,
 };
+enum custom_keycodes {
+    BG_LGHT = NEW_SAFE_RANGE
+};
 // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [MAC_BASE] = LAYOUT_ansi_82(
@@ -50,10 +53,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_LCTL,  KC_LGUI,  KC_LALT,                                KC_SPC,                                 KC_RALT, MO(WIN_FN),KC_RCTL,  KC_LEFT,  KC_DOWN,  KC_RGHT),
 
     [WIN_FN] = LAYOUT_ansi_82(
-        _______,  KC_BRID,  KC_BRIU,  KC_TASK,  KC_FILE,  RGB_VAD,  RGB_VAI,  KC_MPRV,  KC_MPLY,  KC_MNXT,  KC_MUTE,  KC_VOLD,  KC_VOLU,  _______,            RGB_TOG,
+        _______,  KC_BRID,  KC_BRIU,  KC_TASK,  BG_LGHT,  RGB_VAD,  RGB_VAI,  KC_MPRV,  KC_MPLY,  KC_MNXT,  KC_MUTE,  KC_VOLD,  KC_VOLU,  _______,            RGB_TOG,
         _______,  BT_HST1,  BT_HST2,  BT_HST3,  P2P4G,    _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,            _______,
-        RGB_TOG,  RGB_MOD,  RGB_VAI,  RGB_HUI,  RGB_SAI,  RGB_SPI,  KC_INS ,  KC_HOME,  KC_UP  ,  KC_END ,  KC_PGUP,  _______,  _______,  KC_PSCR,            _______,
-        _______,  RGB_RMOD, RGB_VAD,  RGB_HUD,  RGB_SAD,  RGB_SPD,  KC_DEL ,  KC_LEFT,  KC_DOWN,  KC_RGHT,  KC_PGDN,  _______,            _______,            KC_END,
+        _______,  _______,  _______,  _______,  _______,  _______,  KC_INS ,  KC_HOME,  KC_UP  ,  KC_END ,  KC_PGUP,  _______,  _______,  KC_PSCR,            _______,
+        _______,  _______,  _______,  _______,  _______,  _______,  KC_DEL ,  KC_LEFT,  KC_DOWN,  KC_RGHT,  KC_PGDN,  _______,            _______,            KC_END,
         _______,            _______,  _______,  _______,  _______,  BAT_LVL,  NK_TOGG,  _______,  _______,  _______,  _______,            _______,  _______,
         _______,  _______,  _______,                                _______,                                _______,  _______,  _______,  _______,  _______,  _______)
 };
@@ -68,10 +71,21 @@ const uint16_t PROGMEM encoder_map[][NUM_ENCODERS][2] = {
 };
 #endif // ENCODER_MAP_ENABLE
 
+bool bg_light_mode = false;
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     if (!process_record_keychron_common(keycode, record)) {
         return false;
     }
+
+    if (record->event.pressed) {
+        switch (keycode) {
+            case BG_LGHT: {
+                bg_light_mode = !bg_light_mode;
+                return false; // don’t send F4 to the OS
+            }
+        }
+    }
+
     return true;
 }
 
@@ -110,15 +124,18 @@ bool rgb_matrix_indicators_user(void) {
         case MAC_FN: {
             HSV hsv = {0, 255, v}; // red
             RGB rgb = hsv_to_rgb(hsv);
-            set_color_all_if_not_keychron_animation_active(rgb.r, rgb.g, rgb.b); // red
+            set_color_all_if_not_keychron_animation_active(rgb.r, rgb.g, rgb.b);
             break;
         }
         case WIN_BASE: {
-            set_color_all_if_not_keychron_animation_active(0, 0, 0);
+            HSV hsv = bg_light_mode ? (HSV){170, 255, v} : (HSV){0, 0, 0};
+            RGB rgb = hsv_to_rgb(hsv);
+            set_color_all_if_not_keychron_animation_active(rgb.r, rgb.g, rgb.b);
             break;
         }
         case WIN_FN: {
             set_color_all_if_not_keychron_animation_active(0, 0, 0);
+
             HSV hsv_green = {85, 255, v}; // green
             RGB rgb_green = hsv_to_rgb(hsv_green);
             for(int i = 0; i <= 13; ++i) {
@@ -139,7 +156,7 @@ bool rgb_matrix_indicators_user(void) {
         }
     }
     if (caps_word_mode) {
-        HSV hsv_yellow = {43, 255, v}; // yello
+        HSV hsv_yellow = {43, 255, v}; // yellow
         RGB rgb_yellow = hsv_to_rgb(hsv_yellow);
 
         rgb_matrix_set_color(58, rgb_yellow.r, rgb_yellow.g, rgb_yellow.b);
@@ -153,7 +170,7 @@ bool rgb_matrix_indicators_user(void) {
 
 layer_state_t layer_state_set_user(layer_state_t state) {
     // this method implements a small power optimisation: just turn the LED matrix off when we have nothing on
-    switch (get_highest_layer(state)) {
+    switch (get_highest_layer(state|default_layer_state)) {
         case MAC_BASE:
             rgb_matrix_enable_noeeprom();
             break;
@@ -161,7 +178,11 @@ layer_state_t layer_state_set_user(layer_state_t state) {
             rgb_matrix_enable_noeeprom();
             break;
         case WIN_BASE:
-            rgb_matrix_disable_noeeprom();
+            if(bg_light_mode) {
+                rgb_matrix_enable_noeeprom();
+            } else {
+                rgb_matrix_disable_noeeprom();
+            }
             break;
         case WIN_FN:
             rgb_matrix_enable_noeeprom();
