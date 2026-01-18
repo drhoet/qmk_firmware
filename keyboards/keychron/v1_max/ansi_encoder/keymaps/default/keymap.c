@@ -99,32 +99,51 @@ void set_color_all_if_not_keychron_animation_active(uint8_t red, uint8_t green, 
 }
 
 bool rgb_matrix_indicators_user(void) {
+    uint8_t v = rgb_matrix_get_val();
     switch (get_highest_layer(layer_state|default_layer_state)) {
-        case MAC_BASE:
-            set_color_all_if_not_keychron_animation_active(255, 0, 0); // red
+        case MAC_BASE: {
+            HSV hsv = {0, 255, v}; // red
+            RGB rgb = hsv_to_rgb(hsv);
+            set_color_all_if_not_keychron_animation_active(rgb.r, rgb.g, rgb.b);
             break;
-        case MAC_FN:
-            set_color_all_if_not_keychron_animation_active(255, 0, 0); // red
+        }
+        case MAC_FN: {
+            HSV hsv = {0, 255, v}; // red
+            RGB rgb = hsv_to_rgb(hsv);
+            set_color_all_if_not_keychron_animation_active(rgb.r, rgb.g, rgb.b); // red
             break;
-        case WIN_BASE:
+        }
+        case WIN_BASE: {
             set_color_all_if_not_keychron_animation_active(0, 0, 0);
             break;
-        case WIN_FN:
+        }
+        case WIN_FN: {
             set_color_all_if_not_keychron_animation_active(0, 0, 0);
+            HSV hsv_green = {85, 255, v}; // green
+            RGB rgb_green = hsv_to_rgb(hsv_green);
             for(int i = 0; i <= 13; ++i) {
-                rgb_matrix_set_color(i, 0, 255, 0); // top row green
+                rgb_matrix_set_color(i, rgb_green.r, rgb_green.g, rgb_green.b); // top row
             }
 
-            rgb_matrix_set_color(37, 255, 0, 0); // i red
-            rgb_matrix_set_color(51, 255, 0, 0); // j red
-            rgb_matrix_set_color(52, 255, 0, 0); // k red
-            rgb_matrix_set_color(53, 255, 0, 0); // l red
-            rgb_matrix_set_color(42, 255, 255, 0); // \ yellow
+            HSV hsv_red = {0, 255, v}; // red
+            RGB rgb_red = hsv_to_rgb(hsv_red);
+            rgb_matrix_set_color(37, rgb_red.r, rgb_red.g, rgb_red.b); // i
+            rgb_matrix_set_color(51, rgb_red.r, rgb_red.g, rgb_red.b); // j
+            rgb_matrix_set_color(52, rgb_red.r, rgb_red.g, rgb_red.b); // k
+            rgb_matrix_set_color(53, rgb_red.r, rgb_red.g, rgb_red.b); // l
+            
+            HSV hsv_yellow = {43, 255, v}; // yellow
+            RGB rgb_yellow = hsv_to_rgb(hsv_yellow);
+            rgb_matrix_set_color(42, rgb_yellow.r, rgb_yellow.g, rgb_yellow.b); // \ key
             break;
+        }
     }
     if (caps_word_mode) {
-        rgb_matrix_set_color(58, 255, 255, 0);
-        rgb_matrix_set_color(69, 255, 255, 0);
+        HSV hsv_yellow = {43, 255, v}; // yello
+        RGB rgb_yellow = hsv_to_rgb(hsv_yellow);
+
+        rgb_matrix_set_color(58, rgb_yellow.r, rgb_yellow.g, rgb_yellow.b);
+        rgb_matrix_set_color(69, rgb_yellow.r, rgb_yellow.g, rgb_yellow.b);
     } else {
         rgb_matrix_set_color(58, 0, 0, 0);
         rgb_matrix_set_color(69, 0, 0, 0);
