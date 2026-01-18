@@ -25,7 +25,7 @@ enum layers {
 };
 // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
- [MAC_BASE] = LAYOUT_ansi_82(
+    [MAC_BASE] = LAYOUT_ansi_82(
         KC_ESC,   KC_BRID,  KC_BRIU,  KC_MCTRL, KC_LNPAD, RGB_VAD,  RGB_VAI,  KC_MPRV,  KC_MPLY,  KC_MNXT,  KC_MUTE,  KC_VOLD,  KC_VOLU,  KC_DEL,             KC_MUTE,
         KC_GRV,   KC_1,     KC_2,     KC_3,     KC_4,     KC_5,     KC_6,     KC_7,     KC_8,     KC_9,     KC_0,     KC_MINS,  KC_EQL,   KC_BSPC,            KC_PGUP,
         KC_TAB,   KC_Q,     KC_W,     KC_E,     KC_R,     KC_T,     KC_Y,     KC_U,     KC_I,     KC_O,     KC_P,     KC_LBRC,  KC_RBRC,  KC_BSLS,            KC_PGDN,
@@ -89,12 +89,6 @@ void caps_word_set_user(bool active) {
     caps_word_mode = active;
 }
 
-bool win_mode;
-bool dip_switch_update_user_custom(uint8_t index, bool active) {
-    win_mode = (index == 0 && !active);
-    return true;
-}
-
 bool bat_level_animiation_actived(void); // defined in wireless/bat_level_animation.c
 bool indicator_is_running(void); // defined in wireless/indicator.c
 void set_color_all_if_not_keychron_animation_active(uint8_t red, uint8_t green, uint8_t blue) {
@@ -105,18 +99,15 @@ void set_color_all_if_not_keychron_animation_active(uint8_t red, uint8_t green, 
 }
 
 bool rgb_matrix_indicators_user(void) {
-    switch (get_highest_layer(layer_state)) {
+    switch (get_highest_layer(layer_state|default_layer_state)) {
         case MAC_BASE:
-        case WIN_BASE:
-            // for some reason, the baselayer is reported as 0, independent of the dip switch
-            if(win_mode) {
-                set_color_all_if_not_keychron_animation_active(0, 0, 0);
-            } else {
-                set_color_all_if_not_keychron_animation_active(255, 0, 0); // red
-            }
+            set_color_all_if_not_keychron_animation_active(255, 0, 0); // red
             break;
         case MAC_FN:
             set_color_all_if_not_keychron_animation_active(255, 0, 0); // red
+            break;
+        case WIN_BASE:
+            set_color_all_if_not_keychron_animation_active(0, 0, 0);
             break;
         case WIN_FN:
             set_color_all_if_not_keychron_animation_active(0, 0, 0);
@@ -140,3 +131,24 @@ bool rgb_matrix_indicators_user(void) {
     }
     return true;
 }
+
+layer_state_t layer_state_set_user(layer_state_t state) {
+    // this method implements a small power optimisation: just turn the LED matrix off when we have nothing on
+    switch (get_highest_layer(state)) {
+        case MAC_BASE:
+            rgb_matrix_enable_noeeprom();
+            break;
+        case MAC_FN:
+            rgb_matrix_enable_noeeprom();
+            break;
+        case WIN_BASE:
+            rgb_matrix_disable_noeeprom();
+            break;
+        case WIN_FN:
+            rgb_matrix_enable_noeeprom();
+            break;
+    }
+
+    return state;
+}
+
